@@ -1,147 +1,178 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { UserCheck, Award, MessageSquare, Gift, X } from 'lucide-react';
+import { X, User, Trophy, Gift, Calendar } from 'lucide-react';
 import { PRIZE_CATALOG } from '../constants/prizeData';
+import { formatDateDisplay } from '../utils/formatters';
 
 export const PersonalStatsModal = () => {
-  const { personalStatsUser, setPersonalStatsUser, data } = useApp();
-  const [selectedUserId, setSelectedUserId] = useState('');
+  const { personalStatsUser, setPersonalStatsUser, data, t, lang } = useApp();
+  const [selectedUid, setSelectedUid] = useState(() => (personalStatsUser ? personalStatsUser.id : ''));
 
   if (!personalStatsUser) return null;
 
-  const currentUser = data.users.find((u) => u.id === selectedUserId) || (data.users.length > 0 ? data.users[0] : null);
-  const targetId = currentUser ? currentUser.id : '';
+  const targetId = selectedUid || personalStatsUser.id;
+  const targetUser = data.users.find((u) => u.id === targetId) || personalStatsUser;
 
-  // Calculate points
-  let earnedPoints = 0;
+  // Calculate user stats
   let askFirstCount = 0;
   let askCount = 0;
   let replyCount = 0;
-  let meetingCount = 0;
-
-  const userMeetingsSet = new Set();
+  let earnedPoints = 0;
 
   (data.records || []).forEach((r) => {
-    const rUserId = String(r.userId || r.ID || '');
-    if (rUserId === targetId) {
-      earnedPoints += Number(r.score || 0);
-      askFirstCount += Number(r.askFirstCount || 0);
-      askCount += Number(r.askCount || 0);
-      replyCount += Number(r.replyCount || 0);
-      if (r.meetingId) userMeetingsSet.add(r.meetingId);
+    if (String(r.userId || r.ID || '') === targetId) {
+      const askFirst = Number(r.askFirstCount || r.firstAskCount || r.askFirst || r['快問次數'] || r['搶答次數'] || 0);
+      const ask = Number(r.askCount || r.ask || r['發問次數'] || 0);
+      const reply = Number(r.replyCount || r.answerCount || r.reply || r.answer || r['回答次數'] || 0);
+      const score = Number(r.score || r.points || r['個人積分'] || (askFirst * 30 + ask * 10 + reply * 3));
+
+      askFirstCount += askFirst;
+      askCount += ask;
+      replyCount += reply;
+      earnedPoints += score;
     }
   });
 
-  meetingCount = userMeetingsSet.size;
-
-  // Calculate redemptions
+  // Calculate redemptions & history
   let redeemedPoints = 0;
-  const userRedemptions = (data.redemptions || []).filter(
-    (rd) => String(rd.userId || rd.ID || '') === targetId
-  );
-
-  userRedemptions.forEach((rd) => {
-    redeemedPoints += Number(rd.points || rd.cost || 0);
+  const userRedemptions = [];
+  (data.redemptions || []).forEach((rd) => {
+    if (String(rd.userId || rd.ID || '') === targetId) {
+      const cost = Number(rd.points || rd.cost || 0);
+      redeemedPoints += cost;
+      userRedemptions.push(rd);
+    }
   });
 
-  const remainingBalance = earnedPoints - redeemedPoints;
+  // Sort redemptions descending by date
+  userRedemptions.sort((a, b) => {
+    const timeA = new Date(a.date || a.timestamp || 0).getTime();
+    const timeB = new Date(b.date || b.timestamp || 0).getTime();
+    return timeB - timeA;
+  });
+
+  const availableBalance = earnedPoints - redeemedPoints;
 
   return (
-    <div className="modal-overlay" onClick={() => setPersonalStatsUser(null)}>
-      <div className="modal-content glass-panel" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <UserCheck size={22} className="text-glow" /> 個人積分查詢
-          </h3>
-          <button
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-            onClick={() => setPersonalStatsUser(null)}
+    <div className="modal-overlay fade-in" onClick={() => setPersonalStatsUser(null)}>
+      <div className="modal-content glass-panel" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={() => setPersonalStatsUser(null)} title="關閉視窗">
+          <X size={18} />
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              flexShrink: 0
+            }}
           >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="form-group">
-          <label>請選擇同仁姓名：</label>
-          <select value={targetId} onChange={(e) => setSelectedUserId(e.target.value)}>
-            {data.users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.department || '其他'})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {currentUser && (
-          <div style={{ marginTop: 20 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                gap: 12,
-                marginBottom: 20
-              }}
-            >
-              <div style={{ background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: 14, borderRadius: 12, textAlign: 'center' }}>
-                <div style={{ fontSize: '0.8rem', color: '#a5b4fc', marginBottom: 4 }}>累積獲得總積分</div>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#818cf8' }}>{earnedPoints} 分</div>
-              </div>
-
-              <div style={{ background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: 14, borderRadius: 12, textAlign: 'center' }}>
-                <div style={{ fontSize: '0.8rem', color: '#fcd34d', marginBottom: 4 }}>已兌換消費分數</div>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fbbf24' }}>{redeemedPoints} 分</div>
-              </div>
-
-              <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: 14, borderRadius: 12, textAlign: 'center' }}>
-                <div style={{ fontSize: '0.8rem', color: '#6ee7b7', marginBottom: 4 }}>剩餘可用積分</div>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#34d399' }}>{remainingBalance} 分</div>
-              </div>
-            </div>
-
-            <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: 16, borderRadius: 12, border: '1px solid var(--glass-border)', marginBottom: 20 }}>
-              <h4 style={{ fontSize: '0.95rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MessageSquare size={16} /> 發言與會議統計
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, fontSize: '0.88rem' }}>
-                <div>參與會議場數：<strong>{meetingCount}</strong> 場</div>
-                <div>搶答/率先發問 (30分)：<strong>{askFirstCount}</strong> 次</div>
-                <div>一般發問/補充 (10分)：<strong>{askCount}</strong> 次</div>
-                <div>回答次數 (3分)：<strong>{replyCount}</strong> 次</div>
-              </div>
-            </div>
-
-            {userRedemptions.length > 0 && (
-              <div>
-                <h4 style={{ fontSize: '0.95rem', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Gift size={16} /> 兌換紀錄
-                </h4>
-                <div style={{ maxHeight: 180, overflowY: 'auto' }}>
-                  <table className="custom-table" style={{ fontSize: '0.82rem' }}>
-                    <thead>
-                      <tr>
-                        <th>日期</th>
-                        <th>品項</th>
-                        <th>消耗積分</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userRedemptions.map((rd, idx) => {
-                        const prize = PRIZE_CATALOG.find((p) => p.id === rd.item || p.name === rd.item);
-                        return (
-                          <tr key={idx}>
-                            <td>{rd.date || rd.timestamp || 'N/A'}</td>
-                            <td>{prize ? `${prize.icon} ${prize.name}` : rd.item || rd.prizeName}</td>
-                            <td style={{ color: '#fbbf24', fontWeight: 600 }}>-{rd.points || rd.cost} 分</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            <User size={24} />
           </div>
-        )}
+
+          <div style={{ flex: 1, minWidth: 180 }}>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('queryUser')}</label>
+            <select
+              value={targetId}
+              onChange={(e) => setSelectedUid(e.target.value)}
+              style={{ width: '100%', padding: '6px 12px', marginTop: 4, fontWeight: 700 }}
+            >
+              {data.users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.department || '其他'})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 20 }}>
+          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: 12, borderRadius: 12, textAlign: 'center', border: '1px solid var(--glass-border)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4 }}>{t('earnedTotalStat')}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#818cf8' }}>{earnedPoints} {t('points')}</div>
+          </div>
+
+          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: 12, borderRadius: 12, textAlign: 'center', border: '1px solid var(--glass-border)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4 }}>{t('redeemedTotalStat')}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fbbf24' }}>{redeemedPoints} {t('points')}</div>
+          </div>
+
+          <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: 12, borderRadius: 12, textAlign: 'center', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 4 }}>{t('balanceTotalStat')}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#34d399' }}>{availableBalance} {t('points')}</div>
+          </div>
+        </div>
+
+        {/* Speech breakdown */}
+        <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: 14, borderRadius: 12, marginBottom: 20, border: '1px solid var(--glass-border)' }}>
+          <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Trophy size={16} className="text-glow" /> {t('speechStatsTitle')}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
+            <div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#fbbf24' }}>{askFirstCount}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('firstAskStat')}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#60a5fa' }}>{askCount}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('askStat')}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#34d399' }}>{replyCount}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('replyStat')}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Redemption History list */}
+        <div>
+          <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Gift size={16} /> {t('userRedemptionHistory')} ({userRedemptions.length}):
+          </div>
+
+          {userRedemptions.length > 0 ? (
+            <div style={{ maxHeight: 160, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table className="custom-table" style={{ fontSize: '0.82rem' }}>
+                <thead>
+                  <tr>
+                    <th>{t('redeemDate')}</th>
+                    <th>{t('redeemItem')}</th>
+                    <th>{t('deductedPoints')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userRedemptions.map((rd, i) => {
+                    const itemName = rd.prize || rd.item || rd.prizeName || '';
+                    const prizeObj = PRIZE_CATALOG.find((p) => p.id === itemName || p.name === itemName || p.nameEn === itemName);
+                    const displayItemName = prizeObj
+                      ? `${prizeObj.icon} ${lang === 'en' ? (prizeObj.nameEn || prizeObj.name) : prizeObj.name}`
+                      : itemName || 'Unspecified';
+
+                    return (
+                      <tr key={i}>
+                        <td>{formatDateDisplay(rd.date || rd.timestamp)}</td>
+                        <td>{displayItemName}</td>
+                        <td><span style={{ color: '#fbbf24' }}>-{rd.points || rd.cost} {t('points')}</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: 16, color: 'var(--text-muted)', fontSize: '0.85rem', background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+              {t('noRedemptions')}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

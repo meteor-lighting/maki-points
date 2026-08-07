@@ -46,6 +46,10 @@ body {
   overflow-x: hidden;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  word-break: keep-all;
+}
+
 /* Background animated glow shapes */
 .bg-shape {
   position: fixed;
@@ -152,6 +156,14 @@ body {
   font-size: 0.82rem;
   font-weight: 500;
   backdrop-filter: blur(8px);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition);
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+  filter: brightness(1.15);
 }
 
 .status-badge.connecting {
@@ -305,6 +317,8 @@ input:focus, select:focus, textarea:focus {
   justify-content: center;
   gap: 8px;
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary:hover {
@@ -324,6 +338,8 @@ input:focus, select:focus, textarea:focus {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-secondary:hover {
@@ -338,6 +354,8 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-danger:hover {
@@ -400,9 +418,36 @@ input:focus, select:focus, textarea:focus {
 
 .modal-content {
   width: 90%;
-  max-width: 520px;
+  max-width: 540px;
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
+  padding: 24px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+  transform: scale(1.1);
 }
 
 /* Tables */
@@ -460,3 +505,171 @@ input:focus, select:focus, textarea:focus {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Spinner Rotation Animation */
+.animate-spin {
+  animation: spin 0.9s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Responsive Web Design (RWD) Media Queries
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* Header RWD Fixes */
+  .glass-header {
+    padding: 10px 12px;
+  }
+
+  .header-content {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .logo {
+    font-size: 1.2rem;
+    gap: 6px;
+  }
+
+  .logo span.subtitle {
+    font-size: 0.78rem;
+  }
+
+  .nav-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .nav-actions .btn-secondary,
+  .nav-actions .status-badge {
+    padding: 5px 10px;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  /* Section Top Titles & Buttons */
+  h2 {
+    font-size: 1.25rem !important;
+    white-space: normal;
+  }
+
+  .btn-primary {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  .btn-secondary {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* App Container & Panels */
+  .app-container {
+    padding: 12px 8px 32px 8px;
+  }
+
+  .glass-panel {
+    padding: 16px 12px;
+    border-radius: 16px;
+  }
+
+  /* Home Action Cards */
+  .action-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .action-card {
+    padding: 16px;
+  }
+
+  /* Tables */
+  .custom-table th, 
+  .custom-table td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* Modal Content */
+  .modal-content {
+    width: 95%;
+    padding: 16px;
+  }
+
+  .score-btn-group {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .score-btn-group .btn-score {
+    padding: 6px 10px;
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .logo span.subtitle {
+    display: none; /* Hide subtitle text on tiny mobile screens to avoid vertical wrapping */
+  }
+
+  .header-content {
+    align-items: center;
+  }
+
+  .nav-actions {
+    gap: 4px;
+  }
+
+  .nav-actions .btn-secondary,
+  .nav-actions .status-badge {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+  }
+
+  h2 {
+    font-size: 1.1rem !important;
+  }
+
+  .btn-primary {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .btn-secondary {
+    padding: 6px 10px;
+    font-size: 0.76rem;
+  }
+}
+
+/* Responsive Table vs Mobile Card Toggle */
+.desktop-table-view {
+  display: block;
+}
+
+.mobile-cards-view {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-table-view {
+    display: none !important;
+  }
+
+  .mobile-cards-view {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+

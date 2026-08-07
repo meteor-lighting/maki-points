@@ -2,7 +2,6 @@ import React from 'react';
 import { useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { AdminModal } from './components/AdminModal';
-import { ConnectionHelpModal } from './components/ConnectionHelpModal';
 import { PersonalStatsModal } from './components/PersonalStatsModal';
 import { Toast } from './components/Toast';
 
@@ -35,7 +34,6 @@ export function AppContent() {
 
       {/* Modals & Toast */}
       <AdminModal />
-      <ConnectionHelpModal />
       <PersonalStatsModal />
       <Toast />
     </div>

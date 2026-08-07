@@ -5,9 +5,9 @@ import {
   deleteMeeting,
   saveRedemptionData,
   deleteRedemptionData,
-  getGasApiUrl,
-  setCustomApiUrl
+  getGasApiUrl
 } from '../services/api';
+import { translations } from '../constants/translations';
 
 const AppContext = createContext();
 
@@ -19,15 +19,33 @@ export const AppProvider = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('is_admin') === 'true');
   const [currentView, setCurrentView] = useState('home'); // 'home' | 'create' | 'recording' | 'stats' | 'exchange'
 
+  // i18n Language state ('zh' | 'en')
+  const [lang, setLang] = useState(() => localStorage.getItem('maki_lang') || 'zh');
+
+  useEffect(() => {
+    localStorage.setItem('maki_lang', lang);
+  }, [lang]);
+
+  const toggleLang = () => {
+    setLang((prev) => (prev === 'zh' ? 'en' : 'zh'));
+  };
+
+  const t = useCallback(
+    (key) => {
+      if (!translations[lang]) return key;
+      return translations[lang][key] || translations['zh'][key] || key;
+    },
+    [lang]
+  );
+
   // Modals & Active State
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [showConnectionHelp, setShowConnectionHelp] = useState(false);
   const [personalStatsUser, setPersonalStatsUser] = useState(null); // User object or null
   const [toastMessage, setToastMessage] = useState(null);
 
   // Active Recording Session state
   const [activeMeeting, setActiveMeeting] = useState(null);
-  const [activeRecords, setActiveRecords] = useState({}); // userId -> { askFirstCount, askCount, replyCount, score }
+  const [activeRecords, setActiveRecords] = useState({});
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -54,25 +72,28 @@ export const AppProvider = ({ children }) => {
     });
   }, []);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setConnectionStatus('connecting');
     try {
-      const res = await fetchAllData();
+      const res = await fetchAllData(forceRefresh);
       processApiResult(res);
       setConnectionStatus('online');
       setError(null);
+      return res;
     } catch (err) {
       console.error("[AppContext] loadData failed:", err);
       setConnectionStatus('offline');
       setError(err.message || '無法連線至 Google Apps Script 後端');
-      setShowConnectionHelp(true);
+      throw err;
     } finally {
       setLoading(false);
     }
   }, [processApiResult]);
 
   useEffect(() => {
+    // Clear legacy manual overrides from localStorage to prevent old broken URL caching
+    localStorage.removeItem('gas_api_url');
     loadData();
   }, [loadData]);
 
@@ -84,7 +105,7 @@ export const AppProvider = ({ children }) => {
       setShowAdminModal(false);
       return true;
     } else {
-      alert('密碼錯誤！(預設 8888)');
+      alert('密碼錯誤！');
       return false;
     }
   };
@@ -93,30 +114,26 @@ export const AppProvider = ({ children }) => {
     setIsAdmin(false);
     sessionStorage.setItem('is_admin', 'false');
     showToast('👋 已登出管理員身分');
-    if (currentView === 'stats' || currentView === 'exchange') {
+    if (currentView === 'exchange') {
       setCurrentView('home');
     }
   };
 
   const navigate = (viewName) => {
-    if ((viewName === 'stats' || viewName === 'exchange') && !isAdmin) {
+    if (viewName === 'exchange' && !isAdmin) {
       alert('⚠️ 限管理者使用！請點擊右上方「管理員登入」。');
       return;
     }
     setCurrentView(viewName);
   };
 
-  const updateApiUrl = (newUrl) => {
-    setCustomApiUrl(newUrl);
-    showToast('網址已更新，系統將重新載入...');
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-  };
-
   return (
     <AppContext.Provider
       value={{
+        lang,
+        setLang,
+        toggleLang,
+        t,
         data,
         loading,
         error,
@@ -124,15 +141,12 @@ export const AppProvider = ({ children }) => {
         isAdmin,
         currentView,
         showAdminModal,
-        showConnectionHelp,
         personalStatsUser,
         toastMessage,
         activeMeeting,
         activeRecords,
         getGasApiUrl,
-        updateApiUrl,
         setShowAdminModal,
-        setShowConnectionHelp,
         setPersonalStatsUser,
         loginAdmin,
         logoutAdmin,
@@ -153,3 +167,4 @@ export const AppProvider = ({ children }) => {
 };
 
 export const useApp = () => useContext(AppContext);
+
