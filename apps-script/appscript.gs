@@ -255,14 +255,20 @@ function saveMeetingAndRecords(meeting, records) {
   
   if (!meetSheet || !recSheet) throw new Error("Missing Sheets");
 
-  // V5.19：自動補足標頭 (預防數據遺失)
+  // V5.20：自動補足標頭 (預防數據遺失)
   ensureHeaders(SHEET_RECORDS, ['快問', 'firstaskcount']);
 
+  // 確保取得明確有效的 meeting ID 與 recorder 名稱
+  const mId = meeting.id || meeting.meetingId || ('M' + Date.now());
+  const recName = meeting.recorder || meeting.recorderName || '';
 
   const meetHeaders = meetSheet.getRange(1, 1, 1, meetSheet.getLastColumn()).getValues()[0].map(h => h.toString().trim().toLowerCase());
   const meetRow = meetHeaders.map(header => {
     if (header === 'timestamp') return new Date().toISOString();
     const mappedKey = mapHeader(header);
+    if (mappedKey === 'id' || mappedKey === 'meetingId') return mId;
+    if (mappedKey === 'recorder') return recName;
+
     let val = meeting[mappedKey];
     if (val === undefined) {
       const originalKey = Object.keys(meeting).find(k => k.toLowerCase() === header);
@@ -276,7 +282,7 @@ function saveMeetingAndRecords(meeting, records) {
   const recRows = records.map(record => {
     return recHeaders.map(header => {
       const mappedKey = mapHeader(header);
-      if (mappedKey === 'meetingId') return meeting.id;
+      if (mappedKey === 'meetingId' || mappedKey === 'id') return mId;
       let val = record[mappedKey];
       if (val === undefined) {
         const originalKey = Object.keys(record).find(k => k.toLowerCase() === header);
@@ -289,7 +295,7 @@ function saveMeetingAndRecords(meeting, records) {
   if (recRows.length > 0) {
     recSheet.getRange(recSheet.getLastRow() + 1, 1, recRows.length, recHeaders.length).setValues(recRows);
   }
-  return { status: 'success' };
+  return { status: 'success', meetingId: mId };
 }
 
 function updateMeetingRecords(meetingId, updatedRecords) {

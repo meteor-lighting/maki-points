@@ -2,7 +2,7 @@
  * MAKI 會議積分系統 - API Client Service (帶 10分鐘 快取)
  */
 
-const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbyBHEjAM2z4RBjphmg--4vRwAsDfniVXhYazvZp0nTizOCwa_4wAoCrvGfNkO3B1ufDg/exec";
+const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbz1ai6A1bdhDEadJWbpd8yaCuwGnPnFOqYI5ywgUU3R7nHTzAabWaF6gQYpLqijvvBi-g/exec";
 const CACHE_KEY = "maki_points_data_cache_v2";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (600,000 ms)
 

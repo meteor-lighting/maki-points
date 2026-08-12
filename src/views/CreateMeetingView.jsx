@@ -128,9 +128,11 @@ export const CreateMeetingView = () => {
     try {
       const meetingId = `M${Date.now()}`;
       const meetingPayload = {
+        id: meetingId,
         meetingId,
         date: meetingDate,
         title: meetingTitle,
+        recorder: recorderName,
         recorderName
       };
 
@@ -143,6 +145,7 @@ export const CreateMeetingView = () => {
           rec.replyCount * POINT_VALUES.REPLY;
 
         return {
+          id: meetingId,
           meetingId,
           userId: uid,
           userName: u.name || '',
