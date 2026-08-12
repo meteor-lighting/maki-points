@@ -106,17 +106,12 @@ function mapHeader(header) {
   if (s.includes('score') || s.includes('積分') || s.includes('分數') || s.includes('得分') || s.includes('點數') || s.includes('成績') || s.includes('小計')) return 'score';
   if (s.includes('role') || s.includes('角色') || s.includes('職位') || s.includes('身分') || s.includes('權限')) return 'role';
   
-  // 6. 擴充欄位 (發問/兌換)
-  if (s.includes('askcount') || s.includes('發問') || s.includes('提問')) {
-    if (s.includes('第一') || s.includes('搶答')) return 'firstAskCount';
-    return 'askCount';
-  }
-  if (s.includes('answercount') || s.includes('回答') || s.includes('回應') || s.includes('回覆')) return 'answerCount';
+  // 6. 擴充欄位 (發問/快問/回答/兌換)
+  if (s.includes('快問') || s.includes('搶答') || s.includes('第一個') || s.includes('firstask')) return 'firstAskCount';
+  if (s.includes('askcount') || s.includes('發問') || s.includes('提問')) return 'askCount';
+  if (s.includes('answercount') || s.includes('回答') || s.includes('回應') || s.includes('回覆') || s.includes('reply')) return 'answerCount';
   if (s.includes('prize') || s.includes('獎品') || s.includes('獎項') || s.includes('兌換品')) return 'prize';
   if (s.includes('points') || s.includes('扣除') || s.includes('花費')) return 'points';
-  
-  // 5.19：獨立關鍵字備援
-  if (s.includes('快問') || s.includes('搶答') || s.includes('第一個')) return 'firstAskCount';
 
   return s; 
 }
@@ -263,7 +258,8 @@ function saveMeetingAndRecords(meeting, records) {
   const recName = meeting.recorder || meeting.recorderName || '';
 
   const meetHeaders = meetSheet.getRange(1, 1, 1, meetSheet.getLastColumn()).getValues()[0].map(h => h.toString().trim().toLowerCase());
-  const meetRow = meetHeaders.map(header => {
+  const meetRow = meetHeaders.map((header, colIdx) => {
+    if (colIdx === 0) return mId; // 第一欄 (Column A) 100% 強制填入 Meeting ID
     if (header === 'timestamp') return new Date().toISOString();
     const mappedKey = mapHeader(header);
     if (mappedKey === 'id' || mappedKey === 'meetingId') return mId;
@@ -274,13 +270,14 @@ function saveMeetingAndRecords(meeting, records) {
       const originalKey = Object.keys(meeting).find(k => k.toLowerCase() === header);
       if (originalKey) val = meeting[originalKey];
     }
-    return val !== undefined ? val : (meeting[header] || '');
+    return val !== undefined && val !== null ? val : (meeting[header] || '');
   });
   meetSheet.appendRow(meetRow);
 
   const recHeaders = recSheet.getRange(1, 1, 1, recSheet.getLastColumn()).getValues()[0].map(h => h.toString().trim().toLowerCase());
   const recRows = records.map(record => {
-    return recHeaders.map(header => {
+    return recHeaders.map((header, colIdx) => {
+      if (colIdx === 0) return mId; // 第一欄 (Column A) 100% 強制填入 Meeting ID
       const mappedKey = mapHeader(header);
       if (mappedKey === 'meetingId' || mappedKey === 'id') return mId;
       let val = record[mappedKey];
@@ -288,7 +285,7 @@ function saveMeetingAndRecords(meeting, records) {
         const originalKey = Object.keys(record).find(k => k.toLowerCase() === header);
         if (originalKey) val = record[originalKey];
       }
-      return val !== undefined ? val : (record[header] || '');
+      return val !== undefined && val !== null ? val : (record[header] || '');
     });
   });
   

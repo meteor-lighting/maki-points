@@ -150,8 +150,10 @@ export const CreateMeetingView = () => {
           userId: uid,
           userName: u.name || '',
           askFirstCount: rec.askFirstCount,
+          firstAskCount: rec.askFirstCount,
           askCount: rec.askCount,
           replyCount: rec.replyCount,
+          answerCount: rec.replyCount,
           score
         };
       });
