@@ -113,7 +113,8 @@ function mapHeader(header) {
   if (s.includes('prize') || s.includes('獎品') || s.includes('獎項') || s.includes('兌換品')) return 'prize';
   if (s.includes('points') || s.includes('扣除') || s.includes('花費')) return 'points';
 
-  return s; 
+  if (s === 'status' || s === 'active' || s === 'inactive' || s === 'activeinactive') return 'status';
+  return s;
 }
 
 /**
@@ -135,7 +136,7 @@ function getSheetData(sheetName) {
   const scanLimit = Math.min(vals.length, 15);
   
   const STANDARD_KEYS = [
-    'id', 'userId', 'userName', 'department', 
+    'id', 'userId', 'userName', 'department', 'status',
     'meetingId', 'title', 'topic', 'recorder', 'recorderId', 'date', 
     'score', 'role', 'timestamp', 
     'askCount', 'answerCount', 'firstAskCount', 'prize', 'points'

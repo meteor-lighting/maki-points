@@ -69,7 +69,7 @@ export const Header = () => {
               onClick={handleForceRefreshData}
               title="點擊強制與 Google 試算表同步更新數據"
             >
-              <CheckCircle2 size={14} /> {t('connected')} ({data.users?.length || 0} {t('peopleCount')})
+              <CheckCircle2 size={14} /> {t('connected')} ({data.users?.filter((u) => u.isActive !== false).length || 0} {t('peopleCount')})
             </div>
           )}
 

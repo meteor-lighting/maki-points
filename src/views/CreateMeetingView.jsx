@@ -5,6 +5,7 @@ import { POINT_VALUES } from '../constants/prizeData';
 
 export const CreateMeetingView = () => {
   const { data, navigate, saveMeetingAndRecords, loadData, showToast, t } = useApp();
+  const activeUsers = (data.users || []).filter((u) => u.isActive !== false);
 
   const [step, setStep] = useState('setup'); // 'setup' | 'recording'
   const [meetingTitle, setMeetingTitle] = useState('');
@@ -44,27 +45,27 @@ export const CreateMeetingView = () => {
   // Group users by department
   const deptGroupedUsers = React.useMemo(() => {
     const groups = {};
-    (data.users || []).forEach((u) => {
+    activeUsers.forEach((u) => {
       const dept = u.department || '其他';
       if (!groups[dept]) groups[dept] = [];
       groups[dept].push(u);
     });
     return groups;
-  }, [data.users]);
+  }, [activeUsers]);
 
   // Filter department buttons
-  const departments = Array.from(new Set((data.users || []).map((u) => u.department || '其他'))).filter(Boolean);
+  const departments = Array.from(new Set(activeUsers.map((u) => u.department || '其他'))).filter(Boolean);
 
   const handleSelectAllToggle = () => {
-    if (selectedUserIds.length === data.users.length) {
+    if (selectedUserIds.length === activeUsers.length) {
       setSelectedUserIds([]);
     } else {
-      setSelectedUserIds(data.users.map((u) => u.id));
+      setSelectedUserIds(activeUsers.map((u) => u.id));
     }
   };
 
   const handleDeptSelect = (dept) => {
-    const deptUsers = data.users.filter((u) => (u.department || '其他').toUpperCase() === dept.toUpperCase()).map((u) => u.id);
+    const deptUsers = activeUsers.filter((u) => (u.department || '其他').toUpperCase() === dept.toUpperCase()).map((u) => u.id);
     const allDeptSelected = deptUsers.every((id) => selectedUserIds.includes(id));
 
     if (allDeptSelected) {
@@ -212,7 +213,7 @@ export const CreateMeetingView = () => {
                 <option value="" disabled>
                   {t('selectRecorderPlaceholder')}
                 </option>
-                {data.users.map((u) => (
+                {activeUsers.map((u) => (
                   <option key={u.id} value={u.name}>
                     {u.name} ({u.department || '其他'})
                   </option>
@@ -224,7 +225,7 @@ export const CreateMeetingView = () => {
           <div style={{ marginTop: 24, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <label style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, fontSize: '1rem' }}>
-                <Users size={20} className="text-glow" /> {t('selectParticipants')} ({selectedUserIds.length} / {data.users.length} {t('peopleCount')})
+                <Users size={20} className="text-glow" /> {t('selectParticipants')} ({selectedUserIds.length} / {activeUsers.length} {t('peopleCount')})
               </label>
 
               <button

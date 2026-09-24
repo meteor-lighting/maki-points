@@ -6,15 +6,17 @@ import { formatDateDisplay } from '../utils/formatters';
 
 export const ExchangeView = () => {
   const { data, navigate, saveRedemptionData, deleteRedemptionData, loadData, showToast, t, lang } = useApp();
+  const activeUsers = (data.users || []).filter((u) => u.isActive !== false);
+  const inactiveUserIds = new Set((data.users || []).filter((u) => u.isActive === false).map((u) => u.id));
 
-  const [selectedUserId, setSelectedUserId] = useState(() => (data.users?.length > 0 ? data.users[0].id : ''));
+  const [selectedUserId, setSelectedUserId] = useState(() => (activeUsers.length > 0 ? activeUsers[0].id : ''));
   const [selectedPrizeId, setSelectedPrizeId] = useState('p1');
   const [searchQuery, setSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
   // Selected User point calculations
-  const currentUser = data.users.find((u) => u.id === selectedUserId) || (data.users?.length > 0 ? data.users[0] : null);
+  const currentUser = activeUsers.find((u) => u.id === selectedUserId) || (activeUsers.length > 0 ? activeUsers[0] : null);
   const targetId = currentUser ? currentUser.id : '';
 
   let earnedPoints = 0;
@@ -92,6 +94,7 @@ export const ExchangeView = () => {
 
   // Filter redemptions
   const filteredRedemptions = sortedRedemptions.filter((rd) => {
+    if (inactiveUserIds.has(String(rd.userId || rd.ID || ''))) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     const name = String(rd.userName || rd.name || '').toLowerCase();
@@ -118,7 +121,7 @@ export const ExchangeView = () => {
           <div className="form-group" style={{ width: '100%', boxSizing: 'border-box' }}>
             <label>{t('selectUser')}</label>
             <select value={targetId} onChange={(e) => setSelectedUserId(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }}>
-              {data.users.map((u) => (
+              {activeUsers.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name} ({u.department || '其他'})
                 </option>

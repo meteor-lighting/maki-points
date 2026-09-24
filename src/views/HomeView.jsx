@@ -6,8 +6,9 @@ export const HomeView = () => {
   const { navigate, isAdmin, setPersonalStatsUser, data, error, loadData, connectionStatus, t } = useApp();
 
   const handlePersonalStatsClick = () => {
-    if (data.users && data.users.length > 0) {
-      setPersonalStatsUser(data.users[0]);
+    const activeUsers = (data.users || []).filter((u) => u.isActive !== false);
+    if (activeUsers.length > 0) {
+      setPersonalStatsUser(activeUsers[0]);
     } else {
       alert('同仁資料載入中或無法連線，請稍後重試。');
     }

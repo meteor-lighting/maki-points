@@ -6,6 +6,7 @@ import { formatDateDisplay } from '../utils/formatters';
 
 export const PersonalStatsModal = () => {
   const { personalStatsUser, setPersonalStatsUser, data, t, lang } = useApp();
+  const activeUsers = (data.users || []).filter((u) => u.isActive !== false);
   const [selectedUid, setSelectedUid] = useState(() => (personalStatsUser ? personalStatsUser.id : ''));
 
   if (!personalStatsUser) return null;
@@ -84,7 +85,7 @@ export const PersonalStatsModal = () => {
               onChange={(e) => setSelectedUid(e.target.value)}
               style={{ width: '100%', padding: '6px 12px', marginTop: 4, fontWeight: 700 }}
             >
-              {data.users.map((u) => (
+              {activeUsers.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name} ({u.department || '其他'})
                 </option>

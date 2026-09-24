@@ -17,6 +17,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 export const StatisticsView = () => {
   const { data, navigate, isAdmin, deleteMeeting, loadData, showToast, t } = useApp();
+  const activeUsers = (data.users || []).filter((u) => u.isActive !== false);
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('ALL');
   const [deletingId, setDeletingId] = useState(null);
 
@@ -31,7 +32,7 @@ export const StatisticsView = () => {
   // Compute stats per user
   const userStatsMap = {};
 
-  (data.users || []).forEach((u) => {
+  activeUsers.forEach((u) => {
     userStatsMap[u.id] = {
       id: u.id,
       name: u.name,
@@ -171,7 +172,7 @@ export const StatisticsView = () => {
     }
   };
 
-  const departments = ['ALL', ...Array.from(new Set((data.users || []).map((u) => u.department || '其他')))];
+  const departments = ['ALL', ...Array.from(new Set(activeUsers.map((u) => u.department || '其他')))];
 
   return (
     <section className="view-section glass-panel fade-in">

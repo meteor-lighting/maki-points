@@ -60,6 +60,10 @@ export const AppProvider = ({ children }) => {
       .map((u) => ({
         id: String(u.id || u.userId || u.ID || ''),
         name: String(u.name || u.userName || u.Name || ''),
+        status: String(u.status ?? u.active ?? 'active').trim(),
+        isActive: !['inactive', 'false', '0', 'no'].includes(
+          String(u.status ?? u.active ?? 'active').trim().toLowerCase()
+        ),
         department: String(u.department || u.dept || '其他').trim()
       }))
       .filter((u) => u.id && u.name);
@@ -167,4 +171,3 @@ export const AppProvider = ({ children }) => {
 };
 
 export const useApp = () => useContext(AppContext);
-
